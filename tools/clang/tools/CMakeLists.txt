@@ -30,5 +30,7 @@ add_subdirectory(dxc)
 add_subdirectory(dxopt)
 add_subdirectory(dxr)
 add_subdirectory(dxv)
-add_subdirectory(dotnetc)
+if (WIN32) # SPIRV change: UI powered by .NET
+  add_subdirectory(dotnetc)
+endif (WIN32) # SPIRV change
 # HLSL Change Ends

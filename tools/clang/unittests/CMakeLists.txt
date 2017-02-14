@@ -36,8 +36,10 @@ endif (CLANG_INCLUDE_TESTS) # HLSL Change
 # HLSL Change Starts
 
 if (HLSL_INCLUDE_TESTS) 
-  add_subdirectory(HLSL)
-  add_subdirectory(HLSLHost)
+  if (WIN32) # SPIRV change: these tests require MS specific TAEF and DIA SDK
+    add_subdirectory(HLSL)
+    add_subdirectory(HLSLHost)
+  endif (WIN32) # SPIRV change
 endif (HLSL_INCLUDE_TESTS)
 
 # HLSL Change Ends

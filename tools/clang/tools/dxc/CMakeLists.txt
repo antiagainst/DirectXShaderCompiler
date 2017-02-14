@@ -2,7 +2,9 @@
 # This file is distributed under the University of Illinois Open Source License. See LICENSE.TXT for details.
 # Builds dxc.exe
 
-find_package(DiaSDK REQUIRED) # Used for constants and declarations.
+if (WIN32) # SPIRV change
+  find_package(DiaSDK REQUIRED) # Used for constants and declarations.
+endif (WIN32) # SPIRV change
 
 set( LLVM_LINK_COMPONENTS
   ${LLVM_TARGETS_TO_BUILD}
@@ -23,7 +25,9 @@ target_link_libraries(dxc
 
 set_target_properties(dxc PROPERTIES VERSION ${CLANG_EXECUTABLE_VERSION})
 
-include_directories(AFTER ${DIASDK_INCLUDE_DIRS})
+if (WIN32) # SPIRV change
+  include_directories(AFTER ${DIASDK_INCLUDE_DIRS})
+endif (WIN32) # SPIRV change
 
 add_dependencies(dxc dxcompiler)
 

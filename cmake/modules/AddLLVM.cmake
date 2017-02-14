@@ -43,7 +43,7 @@ function(llvm_update_compile_flags name)
     if (MSVC)
       list(APPEND LLVM_COMPILE_FLAGS "/EHsc")
     else (MSVC)
-      message(ERROR "Unimplemented")
+      # SPIRV Change: this is just the default exception handling on Linux
     endif (MSVC)
   endif (LLVM_ENABLE_EH)
   # HLSL Changes End

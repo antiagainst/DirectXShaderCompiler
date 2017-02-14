@@ -1,6 +1,9 @@
 # Copyright (C) Microsoft Corporation. All rights reserved.
 # This file is distributed under the University of Illinois Open Source License. See LICENSE.TXT for details.
-find_package(DiaSDK REQUIRED) # Used for constants and declarations.
+
+if (WIN32) # SPIRV change
+  find_package(DiaSDK REQUIRED) # Used for constants and declarations.
+endif (WIN32) # SPIRV change
 
 set(LLVM_LINK_COMPONENTS
   ${LLVM_TARGETS_TO_BUILD}
@@ -82,10 +85,18 @@ set(GENERATED_HEADERS
   )
 
 add_clang_library(dxcompiler SHARED ${SOURCES})
-target_link_libraries(dxcompiler PRIVATE ${LIBRARIES} ${DIASDK_LIBRARIES})
+if (WIN32) # SPIRV change
+  target_link_libraries(dxcompiler PRIVATE ${LIBRARIES} ${DIASDK_LIBRARIES})
+else () # SPIRV change
+  target_link_libraries(dxcompiler PRIVATE ${LIBRARIES}) # SPIRV change
+endif (WIN32) # SPIRV change
 add_dependencies(dxcompiler ${GENERATED_HEADERS} clang-headers)
 add_dependencies(dxcompiler DxcEtw)
-include_directories(AFTER ${LLVM_INCLUDE_DIR}/dxc/Tracing ${DIASDK_INCLUDE_DIRS})
+if (WIN32) # SPIRV change
+  include_directories(AFTER ${LLVM_INCLUDE_DIR}/dxc/Tracing ${DIASDK_INCLUDE_DIRS})
+else () # SPIRV change
+  include_directories(AFTER ${LLVM_INCLUDE_DIR}/dxc/Tracing) # SPIRV change
+endif (WIN32) # SPIRV change
 
 set_target_properties(dxcompiler
   PROPERTIES

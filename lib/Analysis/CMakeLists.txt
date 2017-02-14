@@ -50,9 +50,9 @@ add_llvm_library(LLVMAnalysis
   PHITransAddr.cpp
   PostDominators.cpp
   PtrUseVisitor.cpp
-  RegionInfo.cpp
+  regioninfo.cpp # SPIRV change
   RegionPass.cpp
-  RegionPrinter.cpp
+  regionprinter.cpp # SPIRV change
   ScalarEvolution.cpp
   ScalarEvolutionAliasAnalysis.cpp
   ScalarEvolutionExpander.cpp
