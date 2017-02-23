@@ -19,6 +19,8 @@
 #include "llvm/Support/DataTypes.h"
 #include <system_error>
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 namespace llvm {
 class format_object_base;
 class FormattedString;

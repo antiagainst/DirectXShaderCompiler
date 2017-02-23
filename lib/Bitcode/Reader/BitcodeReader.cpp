@@ -4801,7 +4801,11 @@ void report_fatal_error_handler(void *user_datam, const std::string &reason,
   BitcodeDiagnosticInfo BDI(std::error_code(EINVAL, std::system_category()),
                             DiagnosticSeverity::DS_Error, reason);
   data->DiagnosticHandler(BDI);
+#ifdef LLVM_ON_WIN32 // SPIRV change
   throw std::exception("Invalid bitcode");
+#else // SPIRV change
+  throw std::runtime_error("Invalid bitcode"); // SPIRV change
+#endif // SPIRV change
 }
 // HLSL Change Ends
 

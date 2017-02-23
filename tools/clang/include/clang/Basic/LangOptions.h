@@ -31,7 +31,6 @@ class LangOptionsBase {
 public:
   // Define simple language options (with no accessors).
 #ifdef MS_SUPPORT_VARIABLE_LANGOPTS
-
 #define LANGOPT(Name, Bits, Default, Description) unsigned Name : Bits;
 #define ENUM_LANGOPT(Name, Type, Bits, Default, Description)
 #include "clang/Basic/LangOptions.def"

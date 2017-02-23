@@ -17,6 +17,8 @@
 
 #include "llvm-c/Support.h"
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 #ifdef __cplusplus
 extern "C" {
 #endif

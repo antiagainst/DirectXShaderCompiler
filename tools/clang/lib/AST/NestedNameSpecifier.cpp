@@ -22,6 +22,8 @@
 #include "llvm/Support/AlignOf.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cassert>
+
+#include "llvm/Support/WinSAL.h" // SPIRV change
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 using namespace clang;

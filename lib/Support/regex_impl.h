@@ -38,6 +38,8 @@
 #ifndef _REGEX_H_
 #define	_REGEX_H_
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 #include <sys/types.h>
 typedef off_t llvm_regoff_t;
 typedef struct {

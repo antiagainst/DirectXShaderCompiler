@@ -18,6 +18,9 @@
 #include "dxc/Support/Global.h"
 #include "dxc/Support/WinIncludes.h"
 #include "HLSLRootSignature.h"
+
+#include <float.h>
+
 using namespace llvm;
 using namespace hlsl;
 
@@ -35,6 +38,23 @@ using namespace hlsl;
 
 // Non-throwing new
 #define NEW new (std::nothrow)
+
+// SPIRV change starts
+#ifndef LLVM_ON_WIN32
+#include <algorithm>
+#define _atoi64 atoll
+#define vsprintf_s vsprintf
+int _stricmp(const char* str1, const char* str2) {
+  // assert(str1 && str2);
+  size_t i = 0;
+  for (; str1[i] && str2[i]; ++i) {
+    int d = tolower(str1[i]) - tolower(str2[i]);
+    if (d != 0) return d;
+  }
+  return str1[i] - str2[i];
+}
+#endif
+// SPIRV change ends
 
 DEFINE_ENUM_FLAG_OPERATORS(DxilRootSignatureFlags)
 DEFINE_ENUM_FLAG_OPERATORS(DxilRootDescriptorFlags)
@@ -185,6 +205,8 @@ void RootSignatureTokenizer::ReadNextToken(uint32_t BufferIdx)
     //
     // Classify token
     //
+    { // SPIRV change -- scope c & bKW so the compiler is not erroring out b/c
+      // goto jumps bypass variable initialization
     char c = pBuffer[0];
 
     // Delimiters
@@ -374,6 +396,7 @@ void RootSignatureTokenizer::ReadNextToken(uint32_t BufferIdx)
 #undef KW
 
     if(!bKW) goto lUnknownToken;
+    } // SPIRV change
 
     return;
 

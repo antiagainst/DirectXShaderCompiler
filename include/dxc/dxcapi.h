@@ -16,6 +16,12 @@
 #define DXC_API_IMPORT __declspec(dllimport)
 #endif
 
+// SPIRV change starts
+#include "llvm/Support/WinTypes.h"
+#include "llvm/Support/WinMacros.h"
+#include "llvm/Support/WinSAL.h"
+// SPIRV change ends
+
 struct IDxcIncludeHandler;
 
 /// <summary>

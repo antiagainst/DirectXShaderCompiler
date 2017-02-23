@@ -188,6 +188,14 @@ void GlobalVariable::setParent(Module *parent) {
   Parent = parent;
 }
 
+// SPIRV change starts -- Ouch! Hack!
+namespace hlsl {
+void HLModule::RemoveGlobal(llvm::GlobalVariable *GV) {
+  assert(false && "hack!");
+}
+}
+// SPIRV change ends
+
 void GlobalVariable::removeFromParent() {
   if (getParent()->HasHLModule()) getParent()->GetHLModule().RemoveGlobal(this);
   getParent()->getGlobalList().remove(this);

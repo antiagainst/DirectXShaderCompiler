@@ -23,6 +23,12 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
 #include <unordered_set>
+// SPIRV change starts
+#include "llvm/Support/WinMacros.h"
+#ifndef LLVM_ON_WIN32
+#include <math.h>
+#endif
+// SPIRV change ends
 
 using namespace llvm;
 using namespace hlsl;
@@ -1047,7 +1053,9 @@ Value *TranslateDegrees(CallInst *CI, IntrinsicOp IOP, OP::OpCode opcode,
   Value *val = CI->getArgOperand(HLOperandIndex::kUnaryOpSrc0Idx);
   // 180/pi.
   // TODO: include M_PI from math.h.
+#ifdef LLVM_ON_WIN32 // SPIRV change
   const double M_PI = 3.14159265358979323846;
+#endif // SPIRV change
   Constant *toDegreeConst = ConstantFP::get(Ty->getScalarType(), 180 / M_PI);
   if (Ty != Ty->getScalarType()) {
     toDegreeConst =
@@ -1183,7 +1191,9 @@ Value *TranslateRadians(CallInst *CI, IntrinsicOp IOP, OP::OpCode opcode,
   Value *val = CI->getArgOperand(HLOperandIndex::kUnaryOpSrc0Idx);
   // pi/180.
   // TODO: include M_PI from math.h.
+#ifdef LLVM_ON_WIN32 // SPIRV change
   const double M_PI = 3.14159265358979323846;
+#endif // SPIRV change
   Constant *toRadianConst = ConstantFP::get(Ty->getScalarType(), M_PI / 180);
   if (Ty != Ty->getScalarType()) {
     toRadianConst =
@@ -1285,7 +1295,9 @@ Value *TranslateExp(CallInst *CI, IntrinsicOp IOP, OP::OpCode opcode,
   Type *Ty = CI->getType();
   Value *val = CI->getArgOperand(HLOperandIndex::kUnaryOpSrc0Idx);
   // TODO: include M_LOG2E from math.h.
+#ifdef LLVM_ON_WIN32 // SPIRV change
   const double M_LOG2E = 1.44269504088896340736;
+#endif // SPIRV change
   Constant *log2eConst = ConstantFP::get(Ty->getScalarType(), M_LOG2E);
   if (Ty != Ty->getScalarType()) {
     log2eConst =
@@ -1303,7 +1315,9 @@ Value *TranslateLog(CallInst *CI, IntrinsicOp IOP, OP::OpCode opcode,
   Type *Ty = CI->getType();
   Value *val = CI->getArgOperand(HLOperandIndex::kUnaryOpSrc0Idx);
   // TODO: include M_LN2 from math.h.
+#ifdef LLVM_ON_WIN32 // SPIRV change
   const double M_LN2 = 0.693147180559945309417;
+#endif // SPIRV change
   Constant *ln2Const = ConstantFP::get(Ty->getScalarType(), M_LN2);
   if (Ty != Ty->getScalarType()) {
     ln2Const = ConstantVector::getSplat(Ty->getVectorNumElements(), ln2Const);
@@ -1320,8 +1334,10 @@ Value *TranslateLog10(CallInst *CI, IntrinsicOp IOP, OP::OpCode opcode,
   Type *Ty = CI->getType();
   Value *val = CI->getArgOperand(HLOperandIndex::kUnaryOpSrc0Idx);
   // TODO: include M_LN2 from math.h.
+#ifdef LLVM_ON_WIN32 // SPIRV change
   const double M_LN2 = 0.693147180559945309417;
   const double M_LN10 = 2.30258509299404568402;
+#endif // SPIRV change
   Constant *log2_10Const = ConstantFP::get(Ty->getScalarType(), M_LN2 / M_LN10);
   if (Ty != Ty->getScalarType()) {
     log2_10Const =

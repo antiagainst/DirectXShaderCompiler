@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 namespace llvm {
 
 _Use_decl_annotations_ // HLSL Change

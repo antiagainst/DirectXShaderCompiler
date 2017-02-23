@@ -11,9 +11,10 @@
 
 #pragma once
 
-#include "dxc/HLSL/DXILConstants.h"
+#include "dxc/HLSL/DxilConstants.h"
 #include <string>
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
 
 namespace hlsl {
 

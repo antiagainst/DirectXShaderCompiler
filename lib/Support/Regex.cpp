@@ -17,6 +17,9 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include <string>
+
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 using namespace llvm;
 
 Regex::Regex(StringRef regex, unsigned Flags) {

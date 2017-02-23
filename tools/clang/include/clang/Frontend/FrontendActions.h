@@ -137,6 +137,7 @@ public:
   bool hasCodeCompletionSupport() const override { return true; }
 };
 
+#if 0 // SPIRV change - no support for modules or PCH
 /// \brief Dump information about the given module file, to be used for
 /// basic debugging and discovery.
 class DumpModuleInfoAction : public ASTFrontendAction {
@@ -162,6 +163,7 @@ protected:
 public:
   bool hasCodeCompletionSupport() const override { return false; }
 };
+#endif // SPIRV changes
 
 /**
  * \brief Frontend action adaptor that merges ASTs together.
@@ -242,6 +244,7 @@ protected:
   bool hasPCHSupport() const override { return true; }
 };
 
+#ifdef LLVM_ON_WIN32 // SPIRV change
 // HLSL Change Begin.
 class HLSLRootSignatureAction : public PreprocessorFrontendAction {
 private:
@@ -261,6 +264,7 @@ public:
   std::unique_ptr<hlsl::RootSignatureHandle> takeRootSigHandle();
 };
 // HLSL Change End.
+#endif // LLVM_ON_WIN32 // SPIRV change
   
 }  // end namespace clang
 

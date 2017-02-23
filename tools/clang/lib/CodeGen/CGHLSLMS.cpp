@@ -18,7 +18,7 @@
 #include "dxc/HLSL/HLMatrixLowerHelper.h"
 #include "dxc/HLSL/HLModule.h"
 #include "dxc/HLSL/HLOperations.h"
-#include "dxc/HLSL/DXILOperations.h"
+#include "dxc/HLSL/DxilOperations.h"
 #include "dxc/HLSL/DxilTypeSystem.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/HlslTypes.h"
@@ -35,8 +35,19 @@
 #include "dxc/HLSL/DxilCBuffer.h"
 #include "clang/Parse/ParseHLSL.h"      // root sig would be in Parser if part of lang
 #include "dxc/Support/WinIncludes.h"    // stream support
+#ifdef LLVM_ON_WIN32 // SPIRV change
 #include "dxc/dxcapi.h"                 // stream support
+#endif // SPIRV change
 #include "dxc/HLSL/HLSLExtensionsCodegenHelper.h"
+
+// SPIRV change starts
+#ifdef LLVM_ON_WIN32
+using std::make_unique;
+#else
+#include "llvm/ADT/STLExtras.h"
+using llvm::make_unique;
+#endif
+// SPIRV change ends
 
 using namespace clang;
 using namespace CodeGen;
@@ -350,7 +361,7 @@ CGMSHLSLRuntime::CGMSHLSLRuntime(CodeGenModule &CGM)
            "else CGMSHLSLRuntime Constructor needs to be updated");
 
   // add globalCB
-  unique_ptr<HLCBuffer> CB = std::make_unique<HLCBuffer>();
+  unique_ptr<HLCBuffer> CB = make_unique<HLCBuffer>();
   std::string globalCBName = "$Globals";
   CB->SetGlobalSymbol(nullptr);
   CB->SetGlobalName(globalCBName);
@@ -1045,7 +1056,7 @@ void CGMSHLSLRuntime::AddHLSLFunctionInfo(Function *F, const FunctionDecl *FD) {
   if (isEntry)
     EntryFunc = F;
 
-  std::unique_ptr<HLFunctionProps> funcProps = std::make_unique<HLFunctionProps>();
+  std::unique_ptr<HLFunctionProps> funcProps = make_unique<HLFunctionProps>();
 
   // Save patch constant function to patchConstantFunctionMap.
   bool isPatchConstantFunction = false;
@@ -1818,64 +1829,6 @@ void CGMSHLSLRuntime::addResource(Decl *D) {
   }
 }
 
-// TODO: collect such helper utility functions in one place.
-static DxilResourceBase::Class KeywordToClass(const std::string &keyword) {
-  // TODO: refactor for faster search (switch by 1/2/3 first letters, then
-  // compare)
-  if (keyword == "SamplerState")
-    return DxilResourceBase::Class::Sampler;
-  
-  if (keyword == "SamplerComparisonState")
-    return DxilResourceBase::Class::Sampler;
-
-  if (keyword == "ConstantBuffer")
-    return DxilResourceBase::Class::CBuffer;
-
-  if (keyword == "TextureBuffer")
-    return DxilResourceBase::Class::SRV;
-
-  bool isSRV = keyword == "Buffer";
-  isSRV |= keyword == "ByteAddressBuffer";
-  isSRV |= keyword == "StructuredBuffer";
-  isSRV |= keyword == "Texture1D";
-  isSRV |= keyword == "Texture1DArray";
-  isSRV |= keyword == "Texture2D";
-  isSRV |= keyword == "Texture2DArray";
-  isSRV |= keyword == "Texture3D";
-  isSRV |= keyword == "TextureCube";
-  isSRV |= keyword == "TextureCubeArray";
-  isSRV |= keyword == "Texture2DMS";
-  isSRV |= keyword == "Texture2DMSArray";
-  if (isSRV)
-    return DxilResourceBase::Class::SRV;
-
-  bool isUAV = keyword == "RWBuffer";
-  isUAV |= keyword == "RWByteAddressBuffer";
-  isUAV |= keyword == "RWStructuredBuffer";
-  isUAV |= keyword == "RWTexture1D";
-  isUAV |= keyword == "RWTexture1DArray";
-  isUAV |= keyword == "RWTexture2D";
-  isUAV |= keyword == "RWTexture2DArray";
-  isUAV |= keyword == "RWTexture3D";
-  isUAV |= keyword == "RWTextureCube";
-  isUAV |= keyword == "RWTextureCubeArray";
-  isUAV |= keyword == "RWTexture2DMS";
-  isUAV |= keyword == "RWTexture2DMSArray";
-  isUAV |= keyword == "AppendStructuredBuffer";
-  isUAV |= keyword == "ConsumeStructuredBuffer";
-  isUAV |= keyword == "RasterizerOrderedBuffer";
-  isUAV |= keyword == "RasterizerOrderedByteAddressBuffer";
-  isUAV |= keyword == "RasterizerOrderedStructuredBuffer";
-  isUAV |= keyword == "RasterizerOrderedTexture1D";
-  isUAV |= keyword == "RasterizerOrderedTexture1DArray";
-  isUAV |= keyword == "RasterizerOrderedTexture2D";
-  isUAV |= keyword == "RasterizerOrderedTexture2DArray";
-  isUAV |= keyword == "RasterizerOrderedTexture3D";
-  if (isUAV)
-    return DxilResourceBase::Class::UAV;
-
-  return DxilResourceBase::Class::Invalid;
-}
 static DxilSampler::SamplerKind KeywordToSamplerKind(const std::string &keyword) {
   // TODO: refactor for faster search (switch by 1/2/3 first letters, then
   // compare)
@@ -1886,25 +1839,6 @@ static DxilSampler::SamplerKind KeywordToSamplerKind(const std::string &keyword)
     return DxilSampler::SamplerKind::Comparison;
 
   return DxilSampler::SamplerKind::Invalid;
-}
-// This should probably be refactored to ASTContextHLSL, and follow types
-// rather than do string comparisons.
-DXIL::ResourceClass
-hlsl::GetResourceClassForType(const clang::ASTContext &context,
-                              clang::QualType Ty) {
-  Ty = Ty.getCanonicalType();
-  if (const clang::ArrayType *arrayType = context.getAsArrayType(Ty)) {
-    return GetResourceClassForType(context, arrayType->getElementType());
-  } else if (const RecordType *RT = Ty->getAsStructureType()) {
-    return KeywordToClass(RT->getDecl()->getName());
-  } else if (const RecordType *RT = Ty->getAs<RecordType>()) {
-    if (const ClassTemplateSpecializationDecl *templateDecl =
-            dyn_cast<ClassTemplateSpecializationDecl>(RT->getDecl())) {
-      return KeywordToClass(templateDecl->getName());
-    }
-  }
-
-  return hlsl::DxilResourceBase::Class::Invalid;
 }
 
 hlsl::DxilResourceBase::Class CGMSHLSLRuntime::TypeToClass(clang::QualType Ty) {
@@ -2312,7 +2246,7 @@ void CGMSHLSLRuntime::AddConstant(VarDecl *constDecl, HLCBuffer &CB) {
     }
   }
 
-  std::unique_ptr<DxilResourceBase> pHlslConst = std::make_unique<DxilResourceBase>(DXIL::ResourceClass::Invalid);
+  std::unique_ptr<DxilResourceBase> pHlslConst = make_unique<DxilResourceBase>(DXIL::ResourceClass::Invalid);
   pHlslConst->SetLowerBound(UINT_MAX);
   pHlslConst->SetGlobalSymbol(cast<llvm::GlobalVariable>(constVal));
   pHlslConst->SetGlobalName(constDecl->getName());
@@ -2354,7 +2288,7 @@ void CGMSHLSLRuntime::AddConstant(VarDecl *constDecl, HLCBuffer &CB) {
 }
 
 uint32_t CGMSHLSLRuntime::AddCBuffer(HLSLBufferDecl *D) {
-  unique_ptr<HLCBuffer> CB = std::make_unique<HLCBuffer>();
+  unique_ptr<HLCBuffer> CB = make_unique<HLCBuffer>();
 
   // setup the CB
   CB->SetGlobalSymbol(nullptr);
@@ -5369,6 +5303,7 @@ void CGMSHLSLRuntime::EmitHLSLFlatConversionToAggregate(CodeGenFunction &CGF,
 void CGMSHLSLRuntime::EmitHLSLRootSignature(CodeGenFunction &CGF,
                                             HLSLRootSignatureAttr *RSA,
                                             Function *Fn) {
+#ifdef LLVM_ON_WIN32 // SPIRV change -- Ouch! Hack!
   // Only parse root signature for entry function.
   if (Fn != EntryFunc)
     return;
@@ -5378,6 +5313,9 @@ void CGMSHLSLRuntime::EmitHLSLRootSignature(CodeGenFunction &CGF,
   SourceLocation SLoc = RSA->getLocation();
 
   clang::CompileRootSignature(StrRef, Diags, SLoc, rootSigVer, &m_pHLModule->GetRootSignature());
+#else
+  assert(false && "Linux not supported yet");
+#endif // SPIRV change
 }
 
 void CGMSHLSLRuntime::EmitHLSLOutParamConversionInit(

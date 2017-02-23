@@ -33,6 +33,7 @@
 #include "llvm/Support/RWMutex.h"
 #include "llvm/Support/StringPool.h"
 #include "llvm/Support/Threading.h"
+#include "llvm/Support/WinMacros.h" // SPIRV change
 using namespace llvm;
 
 // Explicit instantiations of SymbolTableListTraits since some of the methods
@@ -235,6 +236,19 @@ bool Function::isVarArg() const {
 Type *Function::getReturnType() const {
   return getFunctionType()->getReturnType();
 }
+
+// SPIRV change starts -- Ouch! Hack!
+#ifndef LLVM_ON_WIN32
+namespace hlsl {
+void HLModule::RemoveFunction(llvm::Function *F) {
+  assert(false && "hack!");
+}
+void DxilModule::RemoveFunction(llvm::Function *F) {
+  assert(false && "hack!");
+}
+}
+#endif
+// SPIRV change ends
 
 void Function::removeFromParent() {
   if (getParent()->HasHLModule()) getParent()->GetHLModule().RemoveFunction(this); // HLSL Change

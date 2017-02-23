@@ -22,6 +22,8 @@
 #include "llvm/Support/Casting.h"
 #include "dxc/HLSL/DxilConstants.h"
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 namespace clang {
   class ASTContext;
   class AttributeList;
@@ -33,6 +35,7 @@ namespace clang {
   class FunctionTemplateDecl;
   class InheritableAttr;
   class NamedDecl;
+  class Sema; // SPIRV change
   class TypeSourceInfo;
   class TypedefDecl;
 }
@@ -420,6 +423,8 @@ bool TryParseVectorShorthand(
             size_t typeNameLen,
   _Out_     HLSLScalarType* parsedType,
   _Out_     int* elementCount);
+
+DXIL::ResourceClass KeywordToClass(const std::string &keyword);
 
 }
 

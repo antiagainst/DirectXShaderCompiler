@@ -1,5 +1,6 @@
 # Copyright (C) Microsoft Corporation. All rights reserved.
 # This file is distributed under the University of Illinois Open Source License. See LICENSE.TXT for details.
+if (WIN32) # SPIRV change
 add_llvm_library(LLVMHLSL
   DxilCBuffer.cpp
   DxilCompType.cpp
@@ -38,5 +39,49 @@ add_llvm_library(LLVMHLSL
   ADDITIONAL_HEADER_DIRS
   ${LLVM_MAIN_INCLUDE_DIR}/llvm/IR
 )
+# SPIRV change starts
+else ()
+set (HLSL_IGNORE_SOURCES
+  DxilCBuffer.cpp
+  DxilCompType.cpp
+  DxilCondenseResources.cpp
+  DxilContainer.cpp
+  DxilContainerAssembler.cpp
+  DxilContainerReflection.cpp
+  DxilGenerationPass.cpp
+  DxilInterpolationMode.cpp
+  DxilLegalizeSampleOffsetPass.cpp
+  DxilMetadataHelper.cpp
+  DxilModule.cpp
+  DxilOperations.cpp # SPIRV change
+  DxilResource.cpp
+  DxilResourceBase.cpp
+  DxilRootSignature.cpp
+  DxilSampler.cpp
+  DxilSemantic.cpp
+  DxilShaderModel.cpp
+  DxilSignature.cpp
+  DxilSignatureAllocator.cpp
+  DxilSignatureElement.cpp
+  DxilSigPoint.cpp
+  DxilTypeSystem.cpp
+  DxilValidation.cpp
+  DxcOptimizer.cpp
+)
+add_llvm_library(LLVMHLSL
+  HLMatrixLowerPass.cpp
+  HLModule.cpp
+  HLOperations.cpp
+  HLOperationLower.cpp
+  HLOperationLowerExtension.cpp
+  HLResource.cpp
+  ReducibilityAnalysis.cpp
+  WaveSensitivityAnalysis.cpp
+
+  ADDITIONAL_HEADER_DIRS
+  ${LLVM_MAIN_INCLUDE_DIR}/llvm/IR
+)
+endif(WIN32)
+# SPIRV change ends
 
 add_dependencies(LLVMHLSL intrinsics_gen)

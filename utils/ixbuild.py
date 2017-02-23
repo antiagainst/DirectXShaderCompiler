@@ -8,6 +8,7 @@ import subprocess
 
 def default_cmake_options():
     options = {}
+    options["CMAKE_EXPORT_COMPILE_COMMANDS:BOOL"] = "ON"
     options["CLANG_ENABLE_ARCMT:BOOL"] = "OFF"
     options["CLANG_ENABLE_STATIC_ANALYZER:BOOL"] = "OFF"
     options["CLANG_INCLUDE_TESTS:BOOL"] = "OFF"

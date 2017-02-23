@@ -24,6 +24,7 @@
 #include <map>
 #include "dxc/Support/Global.h"
 #include "dxc/HLSL/HLOperations.h"
+#include "llvm/Support/WinMacros.h" // SPIRV change
 
 using namespace clang;
 using namespace hlsl;
@@ -70,6 +71,12 @@ const char* HLSLScalarTypeNames[] = {
   "int64_t",
   "uint64_t",
 };
+
+// SPIRV change starts
+#ifndef LLVM_ON_WIN32
+#define sprintf_s snprintf
+#endif
+// SPIRV change ends
 
 static_assert(HLSLScalarTypeCount == _countof(HLSLScalarTypeNames), "otherwise scalar constants are not aligned");
 

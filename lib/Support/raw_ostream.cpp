@@ -28,6 +28,8 @@
 #include <sys/stat.h>
 #include <system_error>
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 // <fcntl.h> may provide O_BINARY.
 #if defined(HAVE_FCNTL_H)
 # include <fcntl.h>
@@ -526,13 +528,14 @@ raw_fd_ostream::raw_fd_ostream(int fd, bool shouldClose, bool unbuffered)
   }
 
   // Get the starting position.
-  off_t loc = llvm::sys::fs::msf_lseek(FD, 0, SEEK_CUR);  // HLSL Change - msf_lseek
 #ifdef LLVM_ON_WIN32
+  off_t loc = llvm::sys::fs::msf_lseek(FD, 0, SEEK_CUR);  // HLSL Change - msf_lseek
   // MSVCRT's _lseek(SEEK_CUR) doesn't return -1 for pipes.
   sys::fs::file_status Status;
   std::error_code EC = status(FD, Status);
   SupportsSeeking = !EC && Status.type() == sys::fs::file_type::regular_file;
 #else
+  off_t loc = ::lseek(FD, 0, SEEK_CUR);
   SupportsSeeking = loc != (off_t)-1;
 #endif
   if (!SupportsSeeking)
@@ -574,7 +577,11 @@ void raw_fd_ostream::write_impl(const char *Ptr, size_t Size) {
 
     // Check whether we should attempt to use atomic writes.
     if (LLVM_LIKELY(!UseAtomicWrites)) {
+#ifdef LLVM_ON_WIN32
       ret = llvm::sys::fs::msf_write(FD, Ptr, Size);
+#else
+      ret = ::write(FD, Ptr, Size);
+#endif
     } else {
       // Use ::writev() where available.
 #if defined(HAVE_WRITEV)
@@ -582,7 +589,11 @@ void raw_fd_ostream::write_impl(const char *Ptr, size_t Size) {
       struct iovec IOV = {const_cast<void *>(Addr), Size };
       ret = ::writev(FD, &IOV, 1);
 #else
+#ifdef LLVM_ON_WIN32
       ret = llvm::sys::fs::msf_write(FD, Ptr, Size);
+#else
+      ret = ::write(FD, Ptr, Size);
+#endif
 #endif
     }
 
@@ -626,7 +637,11 @@ void raw_fd_ostream::close() {
 
 uint64_t raw_fd_ostream::seek(uint64_t off) {
   flush();
+#ifdef LLVM_ON_WIN32
   pos = llvm::sys::fs::msf_lseek(FD, off, SEEK_SET);  // HLSL Change
+#else
+  pos = ::lseek(FD, off, SEEK_SET);
+#endif
   if (pos == (uint64_t)-1)
     error_detected();
   return pos;

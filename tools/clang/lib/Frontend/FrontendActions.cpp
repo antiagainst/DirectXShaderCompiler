@@ -408,6 +408,7 @@ SyntaxOnlyAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   return llvm::make_unique<ASTConsumer>();
 }
 
+#if 0 // SPIRV changes - no support for modules or PCH
 std::unique_ptr<ASTConsumer>
 DumpModuleInfoAction::CreateASTConsumer(CompilerInstance &CI,
                                         StringRef InFile) {
@@ -418,6 +419,7 @@ std::unique_ptr<ASTConsumer>
 VerifyPCHAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   return llvm::make_unique<ASTConsumer>();
 }
+#endif // SPIRV changes - no support for modules or PCH
 
 #if 0 // HLSL Change Starts - no support for modules or PCH
 
@@ -701,12 +703,13 @@ void PrintPreprocessedAction::ExecuteAction() {
                            CI.getPreprocessorOutputOpts());
 }
 
+#ifdef LLVM_ON_WIN32 // SPIRV change
 // HLSL Change Begin.
 HLSLRootSignatureAction::HLSLRootSignatureAction(StringRef rootSigMacro,
                                                  unsigned major, unsigned minor)
     : HLSLRootSignatureMacro(rootSigMacro), rootSigMajor(major),
       rootSigMinor(minor) {
-  rootSigHandle = std::make_unique<hlsl::RootSignatureHandle>();
+  rootSigHandle = llvm::make_unique<hlsl::RootSignatureHandle>();
 }
 
 void HLSLRootSignatureAction::ExecuteAction() {
@@ -765,6 +768,7 @@ std::unique_ptr<hlsl::RootSignatureHandle> HLSLRootSignatureAction::takeRootSigH
   return std::move(rootSigHandle);
 }
 // HLSL Change End.
+#endif // LLVM_ON_WIN32 // SPIRV change
 
 void PrintPreambleAction::ExecuteAction() {
   switch (getCurrentFileKind()) {

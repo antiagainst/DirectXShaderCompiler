@@ -232,7 +232,11 @@ getMemoryBufferForStream(int FD, const Twine &BufferName) {
   // Read into Buffer until we hit EOF.
   do {
     Buffer.reserve(Buffer.size() + ChunkSize);
+#ifdef LLVM_ON_WIN32 // SPIRV change
     ReadBytes = llvm::sys::fs::msf_read(FD, Buffer.end(), ChunkSize);
+#else // SPIRV change
+    ReadBytes = read(FD, Buffer.end(), ChunkSize);
+#endif // SPIRV change
     if (ReadBytes == -1) {
       if (errno == EINTR) continue;
       return std::error_code(errno, std::generic_category());
@@ -267,7 +271,11 @@ getFileAux(const Twine &Filename, int64_t FileSize, uint64_t MapSize,
   ErrorOr<std::unique_ptr<MemoryBuffer>> Ret =
       getOpenFileImpl(FD, Filename, FileSize, MapSize, Offset,
                       RequiresNullTerminator, IsVolatileSize);
+#ifdef LLVM_ON_WIN32 // SPIRV change
   llvm::sys::fs::msf_close(FD);  // HLSL Change - use msf_close
+#else // SPIRV change
+  close(FD);
+#endif // SPIRV change
   return Ret;
 }
 
@@ -378,7 +386,11 @@ getOpenFileImpl(int FD, const Twine &Filename, uint64_t FileSize,
 
   size_t BytesLeft = MapSize;
 #ifndef HAVE_PREAD
+#ifdef LLVM_ON_WIN32 // SPIRV change
   if (llvm::sys::fs::msf_lseek(FD, Offset, SEEK_SET) == -1)  // HLSL Change - use msf_lseek
+#else // SPIRV change
+  if (lseek(FD, Offset, SEEK_SET) == -1)
+#endif // SPIRV change
     return std::error_code(errno, std::generic_category());
 #endif
 
@@ -386,7 +398,11 @@ getOpenFileImpl(int FD, const Twine &Filename, uint64_t FileSize,
 #ifdef HAVE_PREAD
     ssize_t NumRead = ::pread(FD, BufPtr, BytesLeft, MapSize-BytesLeft+Offset);
 #else
+#ifdef LLVM_ON_WIN32 // SPIRV change
     ssize_t NumRead = ::llvm::sys::fs::msf_read(FD, BufPtr, BytesLeft);
+#else // SPIRV change
+    ssize_t NumRead = ::read(FD, BufPtr, BytesLeft);
+#endif // SPIRV change
 #endif
     if (NumRead == -1) {
       if (errno == EINTR)

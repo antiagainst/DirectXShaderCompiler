@@ -52,6 +52,17 @@ Module::Module(StringRef MID, LLVMContext &C)
   Context.addModule(this);
 }
 
+// SPIRV change starts -- Ouch! Hack!
+namespace llvm {
+void Module::ResetHLModule() {
+  assert(false && "hack!");
+}
+void Module::ResetDxilModule() {
+  assert(false && "hack!");
+}
+}
+// SPIRV change ends
+
 Module::~Module() {
   // HLSL Change Starts
   ResetHLModule();

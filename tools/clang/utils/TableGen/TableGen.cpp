@@ -19,12 +19,14 @@
 #include "llvm/TableGen/Main.h"
 #include "llvm/TableGen/Record.h"
 
+#ifdef LLVM_ON_WIN32 // SPIRV change
 // HLSL Change Starts
 #define NOMINMAX
 #include <windows.h>
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MSFileSystem.h"
 // HLSL Change Ends
+#endif // SPIRV change
 
 using namespace llvm;
 using namespace clang;
@@ -247,6 +249,7 @@ bool ClangTableGenMain(raw_ostream &OS, RecordKeeper &Records) {
 }
 
 int main(int argc, char **argv) {
+#ifdef LLVM_ON_WIN32 // SPIRV change
   // HLSL Change Starts
   llvm::sys::fs::MSFileSystem* msfPtr;
   HRESULT hr;
@@ -258,6 +261,7 @@ int main(int argc, char **argv) {
   llvm::sys::fs::AutoPerThreadSystem pts(msf.get());
   llvm::STDStreamCloser stdStreamCloser;
   // HLSL Change Ends
+#endif // SPIRV change
 
   // sys::PrintStackTraceOnErrorSignal(); // HLSL Change
   // PrettyStackTraceProgram X(argc, argv); // HLSL Change

@@ -45,6 +45,8 @@
 
 #include "regutils.h"
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
@@ -106,8 +108,11 @@ llvm_regerror(int errcode, const llvm_regex_t *preg, _Out_writes_all_(errbuf_siz
 				assert(strlen(r->name) < sizeof(convbuf));
 				(void) llvm_strlcpy(convbuf, r->name, sizeof convbuf);
 			} else
-				//(void)snprintf(convbuf, sizeof convbuf,
+#ifndef LLVM_ON_WIN32 // SPIRV change
+				(void)snprintf(convbuf, sizeof convbuf,
+#else // SPIRV change
 				(void)_snprintf_s(convbuf, _countof(convbuf), _countof(convbuf),
+#endif // SPIRV change
 				    "REG_0x%x", target);
 			s = convbuf;
 		} else
@@ -139,7 +144,10 @@ regatoi(
 	if (r->code == 0)
 		return("0");
 
-	//(void)snprintf(localbuf, localbufsize, "%d", r->code);
+#ifndef LLVM_ON_WIN32 // SPIRV change
+	(void)snprintf(localbuf, localbufsize, "%d", r->code);
+#else // SPIRV change
 	(void)_snprintf_s(localbuf, localbufsize, localbufsize, "%d", r->code);
+#endif // SPIRV change
 	return(localbuf);
 }

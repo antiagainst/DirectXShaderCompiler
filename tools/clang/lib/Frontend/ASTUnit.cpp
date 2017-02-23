@@ -48,6 +48,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "clang/Frontend/VerifyDiagnosticConsumer.h"  // HLSL Change
+#include "llvm/Support/WinMacros.h" // SPIRV change
 using namespace clang;
 
 using llvm::TimeRecord;

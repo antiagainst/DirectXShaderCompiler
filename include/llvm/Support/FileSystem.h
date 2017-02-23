@@ -45,9 +45,13 @@
 #include <sys/stat.h>
 #endif
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 namespace llvm {
 namespace sys {
 namespace fs {
+
+#ifdef LLVM_ON_WIN32 // SPIRV change
 
 // HLSL Change Start
 class MSFileSystem;
@@ -92,6 +96,8 @@ public:
 };
 
 // HLSL Change Ends
+
+#endif // SPIRV change
 
 /// An enumeration for the file system's view of the type.
 enum class file_type {

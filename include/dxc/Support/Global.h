@@ -23,7 +23,9 @@ typedef _Return_type_success_(return >= 0) long HRESULT;
 #endif // !_HRESULT_DEFINED
 
 #include <stdarg.h>
-#include "dxc/Support/Exception.h"
+#include "dxc/Support/exception.h"
+
+#include "llvm/Support/WinSAL.h" // SPIRV change
 
 namespace std { class error_code; }
 void CheckLLVMErrorCode(const std::error_code &ec);
@@ -79,6 +81,8 @@ template<typename T> T *VerifyNullAndThrow(T *p) {
 }
 #define VNT(__p) VerifyNullAndThrow(__p)
 
+#ifdef LLVM_ON_WIN32 // SPIRV change
+
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(_In_opt_ const char *msg);
 
 inline void OutputDebugBytes(const void *ptr, size_t len) {
@@ -124,7 +128,11 @@ inline void OutputDebugFormatA(_In_ _Printf_format_string_ _Null_terminated_ con
   }
 }
 
+#endif // SPIRV change
+
 #ifdef DBG
+
+#ifdef LLVM_ON_WIN32 // SPIRV change
 
 // DXASSERT is used to debug break when 'exp' evaluates to false and is only
 //     intended for internal developer use. It is compiled out in free
@@ -161,6 +169,15 @@ inline void OutputDebugFormatA(_In_ _Printf_format_string_ _Null_terminated_ con
 } while (0)
 /// DXTRACE_FMT_APIFS is used by the API-based virtual filesystem.
 #define DXTRACE_FMT_APIFS(fmt, ...) DXTRACE_FMT(DXTRACE_MASK_APIFS, fmt, __VA_ARGS__)
+
+// SPIRV change starts
+#else
+#define DXASSERT_NOMSG assert
+#define DXASSERT(expr, msg) do { if (!(expr)) { assert(false && msg); } } while (0)
+#define DXASSERT_LOCALVAR(local, exp, msg) DXASSERT(exp, msg)
+#define DXVERIFY_NOMSG assert
+#endif // LLVM_ON_WIN32
+// SPIRV change ends
 
 #else
 

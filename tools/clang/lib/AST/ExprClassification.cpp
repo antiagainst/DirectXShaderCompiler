@@ -19,6 +19,9 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ExprObjC.h"
 #include "llvm/Support/ErrorHandling.h"
+
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 using namespace clang;
 
 typedef Expr::Classification Cl;

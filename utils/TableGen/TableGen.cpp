@@ -20,12 +20,14 @@
 #include "llvm/TableGen/Record.h"
 #include "llvm/TableGen/SetTheory.h"
 
+#ifdef LLVM_ON_WIN32 // SPIRV change
 // HLSL Change Starts
 #define NOMINMAX
 #include <windows.h>
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MSFileSystem.h"
 // HLSL Change Ends
+#endif // SPIRV change
 
 using namespace llvm;
 
@@ -179,6 +181,8 @@ bool LLVMTableGenMain(raw_ostream &OS, RecordKeeper &Records) {
 }
 
 int main(int argc, char **argv) {
+
+#ifdef LLVM_ON_WIN32
   // HLSL Change Starts
   if (std::error_code ec = llvm::sys::fs::SetupPerThreadFileSystem())
       return 1;
@@ -189,6 +193,7 @@ int main(int argc, char **argv) {
   std::unique_ptr<llvm::sys::fs::MSFileSystem> msf(msfPtr);
   llvm::sys::fs::AutoPerThreadSystem pts(msf.get());
   // HLSL Change Ends
+#endif
 
   // sys::PrintStackTraceOnErrorSignal(); // HLSL Change
   // PrettyStackTraceProgram X(argc, argv); // HLSL Change

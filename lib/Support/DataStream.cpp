@@ -56,11 +56,19 @@ class DataFileStreamer : public DataStreamer {
 public:
   DataFileStreamer() : Fd(0) {}
   virtual ~DataFileStreamer() {
+#ifdef LLVM_ON_WIN32 // SPIRV change
     llvm::sys::fs::msf_close(Fd);  // HLSL Change - use msf_close
+#else // SPIRV change
+    close(Fd);
+#endif // SPIRV change
   }
   size_t GetBytes(unsigned char *buf, size_t len) override {
     NumStreamFetches++;
+#ifdef LLVM_ON_WIN32 // SPIRV change
     return llvm::sys::fs::msf_read(Fd, buf, len);
+#else // SPIRV change
+    return read(Fd, buf, len);
+#endif // SPIRV change
   }
 
   std::error_code OpenFile(const std::string &Filename) {

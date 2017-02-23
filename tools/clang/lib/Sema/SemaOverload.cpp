@@ -35,6 +35,7 @@
 #include "llvm/ADT/SmallString.h"
 #include <algorithm>
 #include <cstdlib>
+#include "llvm/Support/WinMacros.h" // SPIRV change
 
 using namespace clang;
 using namespace sema;

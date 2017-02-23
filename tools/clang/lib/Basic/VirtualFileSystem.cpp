@@ -137,7 +137,11 @@ RealFile::getBuffer(const Twine &Name, int64_t FileSize,
 #endif
 #include "llvm/Support/FileSystem.h" // HLSL Change
 std::error_code RealFile::close() {
+#ifdef LLVM_ON_WIN32 // SPIRV change
   if (llvm::sys::fs::msf_close(FD)) // HLSL Change
+#else // SPIRV change
+  if (::close(FD))
+#endif // SPIRV change
     return std::error_code(errno, std::generic_category());
   FD = -1;
   return std::error_code();

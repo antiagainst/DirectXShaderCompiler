@@ -21,6 +21,8 @@
 #include "llvm/Support/ConvertUTF.h"
 #include "llvm/Support/ErrorHandling.h"
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 using namespace clang;
 
 static unsigned getCharWidth(tok::TokenKind kind, const TargetInfo &Target) {

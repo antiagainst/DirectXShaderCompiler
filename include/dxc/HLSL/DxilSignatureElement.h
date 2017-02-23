@@ -17,6 +17,7 @@
 #include "dxc/HLSL/DxilCompType.h"
 #include <string>
 #include <vector>
+#include <limits.h> // SPIRV change
 
 
 namespace hlsl {

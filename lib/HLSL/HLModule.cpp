@@ -26,11 +26,20 @@
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/Support/raw_ostream.h"
 
+// SPIRV change starts
+#ifdef LLVM_ON_WIN32
+using std::make_unqiue;
+#else
+#include "llvm/Support/WinMacros.h"
+#include "llvm/ADT/STLExtras.h"
+using llvm::make_unique;
+#endif
+// SPIRV change ends
+
 using namespace llvm;
 using std::string;
 using std::vector;
 using std::unique_ptr;
-
 
 namespace hlsl {
 
@@ -41,10 +50,10 @@ CreateSignatures(const ShaderModel *pSM,
                  std::unique_ptr<DxilSignature> &PatchConstantSignature,
                  std::unique_ptr<RootSignatureHandle> &RootSignature) {
   DXIL::ShaderKind shaderKind = pSM->GetKind();
-  InputSignature = std::make_unique<DxilSignature>(shaderKind, DxilSignature::Kind::Input);
-  OutputSignature = std::make_unique<DxilSignature>(shaderKind, DxilSignature::Kind::Output);
-  PatchConstantSignature = std::make_unique<DxilSignature>(shaderKind, DxilSignature::Kind::PatchConstant);
-  RootSignature = std::make_unique<RootSignatureHandle>();
+  InputSignature = make_unique<DxilSignature>(shaderKind, DxilSignature::Kind::Input);
+  OutputSignature = make_unique<DxilSignature>(shaderKind, DxilSignature::Kind::Output);
+  PatchConstantSignature = make_unique<DxilSignature>(shaderKind, DxilSignature::Kind::PatchConstant);
+  RootSignature = make_unique<RootSignatureHandle>();
 }
 
 //------------------------------------------------------------------------------
@@ -57,10 +66,10 @@ HLModule::HLModule(Module *pModule)
     , m_pEntryFunc(nullptr)
     , m_EntryName("")
     , m_pSM(nullptr)
-    , m_pOP(std::make_unique<OP>(pModule->getContext(), pModule))
-    , m_pTypeSystem(std::make_unique<DxilTypeSystem>(pModule))
-    , m_pMDHelper(std::make_unique<DxilMDHelper>(
-          pModule, std::make_unique<HLExtraPropertyHelper>(pModule)))
+    , m_pOP(make_unique<OP>(pModule->getContext(), pModule))
+    , m_pTypeSystem(make_unique<DxilTypeSystem>(pModule))
+    , m_pMDHelper(make_unique<DxilMDHelper>(
+          pModule, make_unique<HLExtraPropertyHelper>(pModule)))
     , m_pDebugInfoFinder(nullptr)
     , m_DxilMajor(1)
     , m_DxilMinor(0) {
@@ -506,7 +515,7 @@ void HLModule::LoadHLMetadata() {
     while (propIdx < fnProps->getNumOperands()) {
       MDTuple *pProps = dyn_cast<MDTuple>(fnProps->getOperand(propIdx++));
 
-      std::unique_ptr<hlsl::HLFunctionProps> props = std::make_unique<hlsl::HLFunctionProps>();
+      std::unique_ptr<hlsl::HLFunctionProps> props = make_unique<hlsl::HLFunctionProps>();
       unsigned idx = 0;
       Function *F = dyn_cast<Function>(dyn_cast<ValueAsMetadata>(pProps->getOperand(idx++))->getValue());
       switch (m_pSM->GetKind()) {
@@ -652,7 +661,7 @@ void HLModule::LoadHLResources(const llvm::MDOperand &MDO) {
   // Load CBuffer records.
   if (pCBuffers != nullptr) {
     for (unsigned i = 0; i < pCBuffers->getNumOperands(); i++) {
-      unique_ptr<DxilCBuffer> pCB = std::make_unique<DxilCBuffer>();
+      unique_ptr<DxilCBuffer> pCB = make_unique<DxilCBuffer>();
       m_pMDHelper->LoadDxilCBuffer(pCBuffers->getOperand(i), *pCB);
       AddCBuffer(std::move(pCB));
     }
@@ -1157,7 +1166,7 @@ void HLModule::UpdateGlobalVariableDebugInfo(
 
 DebugInfoFinder &HLModule::GetOrCreateDebugInfoFinder() {
   if (m_pDebugInfoFinder == nullptr) {
-    m_pDebugInfoFinder = std::make_unique<llvm::DebugInfoFinder>();
+    m_pDebugInfoFinder = make_unique<llvm::DebugInfoFinder>();
     m_pDebugInfoFinder->processModule(*m_pModule);
   }
   return *m_pDebugInfoFinder;
@@ -1187,7 +1196,7 @@ namespace llvm {
 hlsl::HLModule &Module::GetOrCreateHLModule(bool skipInit) {
   std::unique_ptr<hlsl::HLModule> M;
   if (!HasHLModule()) {
-    M = std::make_unique<hlsl::HLModule>(this);
+    M = make_unique<hlsl::HLModule>(this);
     if (!skipInit) {
       M->LoadHLMetadata();
     }

@@ -813,7 +813,11 @@ std::error_code copy_file(const Twine &From, const Twine &To) {
   if (std::error_code EC = openFileForRead(From, ReadFD))
     return EC;
   if (std::error_code EC = openFileForWrite(To, WriteFD, F_None)) {
+#ifdef LLVM_ON_WIN32 // SPIRV change
     msf_close(ReadFD); // HLSL Change
+#else // SPIRV change
+    close(ReadFD);
+#endif // SPIRV change
     return EC;
   }
 
@@ -821,11 +825,19 @@ std::error_code copy_file(const Twine &From, const Twine &To) {
   char *Buf = new char[BufSize];
   int BytesRead = 0, BytesWritten = 0;
   for (;;) {
+#ifdef LLVM_ON_WIN32 // SPIRV change
     BytesRead = msf_read(ReadFD, Buf, BufSize); // HLSL Change
+#else // SPIRV change
+    BytesRead = read(ReadFD, Buf, BufSize);
+#endif // SPIRV change
     if (BytesRead <= 0)
       break;
     while (BytesRead) {
+#ifdef LLVM_ON_WIN32 // SPIRV change
       BytesWritten = msf_write(WriteFD, Buf, BytesRead); // HLSL Change
+#else // SPIRV change
+      BytesWritten = write(WriteFD, Buf, BytesRead);
+#endif // SPIRV change
       if (BytesWritten < 0)
         break;
       BytesRead -= BytesWritten;
@@ -833,8 +845,13 @@ std::error_code copy_file(const Twine &From, const Twine &To) {
     if (BytesWritten < 0)
       break;
   }
+#ifdef LLVM_ON_WIN32 // SPIRV change
   msf_close(ReadFD); // HLSL Change
   msf_close(WriteFD); // HLSL Change
+#else // SPIRV change
+  close(ReadFD);
+  close(WriteFD);
+#endif // SPIRV change
   delete[] Buf;
 
   if (BytesRead < 0 || BytesWritten < 0)
@@ -1051,8 +1068,13 @@ std::error_code identify_magic(const Twine &Path, file_magic &Result) {
     return EC;
 
   char Buffer[32];
+#ifdef LLVM_ON_WIN32 // SPIRV change
   int Length = msf_read(FD, Buffer, sizeof(Buffer)); // HLSL Change
   if (msf_close(FD) != 0 || Length < 0) // HLSL Change
+#else // SPIRV change
+  int Length = read(FD, Buffer, sizeof(Buffer));
+  if (close(FD) != 0 || Length < 0)
+#endif // SPIRV change
     return std::error_code(errno, std::generic_category());
 
   Result = identify_magic(StringRef(Buffer, Length));

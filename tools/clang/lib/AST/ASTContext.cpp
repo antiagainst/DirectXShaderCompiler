@@ -40,6 +40,7 @@
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/raw_ostream.h"
 #include <map>
+#include "llvm/Support/WinMacros.h" // SPIRV change
 
 using namespace clang;
 

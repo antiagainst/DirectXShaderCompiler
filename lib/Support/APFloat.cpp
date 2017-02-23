@@ -23,6 +23,8 @@
 #include <cstring>
 #include <limits.h>
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 using namespace llvm;
 
 /// A macro used to combine two fcCategory enums into one key which can be used

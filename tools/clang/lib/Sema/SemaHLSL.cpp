@@ -30,11 +30,15 @@
 #include <map>
 #include "dxc/Support/Global.h"
 #include "dxc/Support/WinIncludes.h"
-#include "dxc/dxcapi.internal.h"
+#include "dxc/dxcapi.intrinsics.h" // SPIRV change
 #include "dxc/HlslIntrinsicOp.h"
 #include "gen_intrin_main_tables_15.h"
 #include "dxc/HLSL/HLOperations.h"
 #include <array>
+// SPIRV change starts
+#include <float.h>
+#include "llvm/Support/WinSAL.h"
+// SPIRV change ends
 
 enum ArBasicKind {
   AR_BASIC_BOOL,
@@ -2077,9 +2081,17 @@ private:
 
     _firstChecked = true;
 
+#ifdef LLVM_ON_WIN32 // SPIRV change
     // TODO: review this - this will allocate at least once per string
     CA2WEX<> typeName(_typeName.str().c_str(), CP_UTF8);
     CA2WEX<> functionName(_functionName.str().c_str(), CP_UTF8);
+// SPIRV change starts
+#else
+    // Ouch! This doesn't respects UTF8 anymore.
+    const char* typeName = _typeName.str().c_str();
+    const char* functionName = _functionName.str().c_str();
+#endif
+// SPIRV change ends
 
     if (FAILED(_tables[_tableIndex]->LookupIntrinsic(
             typeName, functionName, &_tableIntrinsic, &_tableLookupCookie))) {
@@ -2410,6 +2422,11 @@ private:
       char name[g_MaxIntrinsicParamName + 2];
       name[0] = 'T';
       name[1] = '\0';
+//SPIRV change starts
+#ifndef LLVM_ON_WIN32
+#define strcat_s strcat
+#endif
+//SPIRV change ends
       strcat_s(name, intrinsic->pArgs[i].pName);
       argsQTs[i - 1] = AddTemplateParamToArray(name, recordDecl, templateDepth, templateParamNamedDecls, &templateParamNamedDeclsCount);
       // Change out/inout param to reference type.
@@ -3099,8 +3116,15 @@ public:
       const HLSL_INTRINSIC *pIntrinsic = nullptr;
       const HLSL_INTRINSIC *pPrior = nullptr;
       UINT64 lookupCookie = 0;
+#ifdef LLVM_ON_WIN32 // SPIRV change
       CA2W wideTypeName(typeName);
       HRESULT found = table->LookupIntrinsic(wideTypeName, L"*", &pIntrinsic, &lookupCookie);
+// SPIRV change starts
+#else
+      const char* wideTypeName = typeName;
+      HRESULT found = table->LookupIntrinsic(wideTypeName, "*", &pIntrinsic, &lookupCookie);
+#endif
+// SPIRV change ends
       while (pIntrinsic != nullptr && SUCCEEDED(found)) {
         if (!AreIntrinsicTemplatesEquivalent(pIntrinsic, pPrior)) {
           AddObjectIntrinsicTemplate(recordDecl, startDepth, pIntrinsic);
@@ -3108,7 +3132,13 @@ public:
           // intrinsics are alive as long as the table is alive.
           pPrior = pIntrinsic;
         }
+#ifdef LLVM_ON_WIN32 // SPIRV change
         found = table->LookupIntrinsic(wideTypeName, L"*", &pIntrinsic, &lookupCookie);
+// SPIRV change starts
+#else
+        found = table->LookupIntrinsic(wideTypeName, "*", &pIntrinsic, &lookupCookie);
+#endif
+// SPIRV change ends
       }
     }
   }
@@ -3621,7 +3651,7 @@ public:
   /// <param name="RHS">Right hand side.</param>
   /// <param name="QuestionLoc">Location of question mark in operator.</param>
   /// <returns>Result type of vector conditional expression.</returns>
-  clang::QualType HLSLExternalSource::CheckVectorConditional(
+  clang::QualType CheckVectorConditional(
     _In_ ExprResult &Cond,
     _In_ ExprResult &LHS,
     _In_ ExprResult &RHS,
@@ -4293,7 +4323,7 @@ FunctionDecl* HLSLExternalSource::AddSubscriptSpecialization(
 /// and want to treat either side equally you should call it twice, swapping the
 /// parameter order.
 /// </summary>
-static bool CombineObjectTypes(ArBasicKind Target, __in ArBasicKind Source,
+static bool CombineObjectTypes(ArBasicKind Target, _In_ ArBasicKind Source,
                                _Out_opt_ ArBasicKind *pCombined) {
   if (Target == Source) {
     AssignOpt(Target, pCombined);
@@ -5741,7 +5771,7 @@ UINT64 HLSLExternalSource::ScoreCast(QualType pLType, QualType pRType)
   }
 
 #define SCORE_COND(shift, cond) { \
-  if (cond) uScore += 1UI64 << (SCORE_MIN_SHIFT + SCORE_PARAM_SHIFT * shift); }
+  if (cond) uScore += 1ULL << (SCORE_MIN_SHIFT + SCORE_PARAM_SHIFT * shift); } // SPIRV change: 1UI64 -> 1ULL
   SCORE_COND(0, uRSize < uLSize);
   SCORE_COND(1, bLPromo);
   SCORE_COND(2, bRPromo);
@@ -6876,6 +6906,8 @@ bool HLSLExternalSource::CanConvert(
   CollectInfo(target, &TargetInfo);
   CollectInfo(source, &SourceInfo);
 
+  { // SPIRV change -- suppress compiler errors about goto jumps bypasses
+    // variable initialization
   UINT uTSize = TargetInfo.uTotalElts;
   UINT uSSize = SourceInfo.uTotalElts;
 
@@ -7211,6 +7243,7 @@ bool HLSLExternalSource::CanConvert(
       }
     }
   }
+  } // SPIRV change
 
 lSuccess:
   if (standard)

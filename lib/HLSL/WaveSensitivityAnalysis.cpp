@@ -12,7 +12,7 @@
 
 #include "dxc/HLSL/DxilValidation.h"
 #include "dxc/HLSL/DxilGenerationPass.h"
-#include "dxc/HLSL/DXILOperations.h"
+#include "dxc/HLSL/DxilOperations.h"
 #include "dxc/HLSL/DxilModule.h"
 #include "dxc/HLSL/DxilShaderModel.h"
 #include "dxc/HLSL/DxilContainer.h"
@@ -31,7 +31,9 @@
 #include "llvm/IR/DiagnosticInfo.h"
 #include "llvm/IR/DiagnosticPrinter.h"
 #include "llvm/ADT/BitVector.h"
+#ifdef LLVM_ON_WIN32 // SPIRV change
 #include <winerror.h>
+#endif // SPIRV change
 #include "llvm/Support/raw_ostream.h"
 #include <unordered_set>
 

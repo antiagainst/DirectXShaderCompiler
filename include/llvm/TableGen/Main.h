@@ -14,7 +14,14 @@
 #ifndef LLVM_TABLEGEN_MAIN_H
 #define LLVM_TABLEGEN_MAIN_H
 
+#ifdef MS_VER // SPIRV change
 #include <sal.h>  // HLSL Change - SAL
+// SPIRV change starts
+#else
+#define _In_
+#define _In_z_
+#endif
+// SPIRV change ends
 
 namespace llvm {
 

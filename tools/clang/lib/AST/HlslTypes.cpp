@@ -24,6 +24,72 @@ using namespace clang;
 
 namespace hlsl {
 
+/// <summary>Try to convert HLSL template vector/matrix type to
+/// ExtVectorType.</summary>
+const clang::ExtVectorType *
+ConvertHLSLVecMatTypeToExtVectorType(const clang::ASTContext &context,
+                                     clang::QualType type) {
+  const Type *Ty = type.getCanonicalType().getTypePtr();
+
+  if (const RecordType *RT = dyn_cast<RecordType>(Ty)) {
+    if (const ClassTemplateSpecializationDecl *templateDecl =
+            dyn_cast<ClassTemplateSpecializationDecl>(RT->getDecl())) {
+      // TODO: check pointer instead of name
+      if (templateDecl->getName() == "vector") {
+        const TemplateArgumentList &argList = templateDecl->getTemplateArgs();
+        const TemplateArgument &arg0 = argList[0];
+        const TemplateArgument &arg1 = argList[1];
+        QualType elemTy = arg0.getAsType();
+        llvm::APSInt elmSize = arg1.getAsIntegral();
+        return context.getExtVectorType(elemTy, elmSize.getLimitedValue())
+            ->getAs<ExtVectorType>();
+      }
+    }
+  }
+  return nullptr;
+}
+
+bool IsHLSLVecMatType(clang::QualType type) {
+  const Type *Ty = type.getCanonicalType().getTypePtr();
+  if (const RecordType *RT = dyn_cast<RecordType>(Ty)) {
+    if (const ClassTemplateSpecializationDecl *templateDecl =
+            dyn_cast<ClassTemplateSpecializationDecl>(RT->getDecl())) {
+      if (templateDecl->getName() == "vector") {
+        return true;
+      } else if (templateDecl->getName() == "matrix") {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool IsHLSLMatType(clang::QualType type) {
+  const clang::Type *Ty = type.getCanonicalType().getTypePtr();
+  if (const RecordType *RT = dyn_cast<RecordType>(Ty)) {
+    if (const ClassTemplateSpecializationDecl *templateDecl =
+            dyn_cast<ClassTemplateSpecializationDecl>(RT->getDecl())) {
+      if (templateDecl->getName() == "matrix") {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool IsHLSLVecType(clang::QualType type) {
+  const clang::Type *Ty = type.getCanonicalType().getTypePtr();
+  if (const RecordType *RT = dyn_cast<RecordType>(Ty)) {
+    if (const ClassTemplateSpecializationDecl *templateDecl =
+            dyn_cast<ClassTemplateSpecializationDecl>(RT->getDecl())) {
+      if (templateDecl->getName() == "vector") {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /// Checks whether the pAttributes indicate a parameter is inout or out; if
 /// inout, pIsIn will be set to true.
 bool IsParamAttributedAsOut(_In_opt_ clang::AttributeList *pAttributes,
@@ -438,4 +504,82 @@ HLSLScalarType MakeUnsigned(HLSLScalarType T) {
     return T;
 }
 
+// TODO: collect such helper utility functions in one place.
+DXIL::ResourceClass KeywordToClass(const std::string &keyword) {
+  // TODO: refactor for faster search (switch by 1/2/3 first letters, then
+  // compare)
+  if (keyword == "SamplerState")
+    return DXIL::ResourceClass::Sampler;
+
+  if (keyword == "SamplerComparisonState")
+    return DXIL::ResourceClass::Sampler;
+
+  if (keyword == "ConstantBuffer")
+    return DXIL::ResourceClass::CBuffer;
+
+  if (keyword == "TextureBuffer")
+    return DXIL::ResourceClass::SRV;
+
+  bool isSRV = keyword == "Buffer";
+  isSRV |= keyword == "ByteAddressBuffer";
+  isSRV |= keyword == "StructuredBuffer";
+  isSRV |= keyword == "Texture1D";
+  isSRV |= keyword == "Texture1DArray";
+  isSRV |= keyword == "Texture2D";
+  isSRV |= keyword == "Texture2DArray";
+  isSRV |= keyword == "Texture3D";
+  isSRV |= keyword == "TextureCube";
+  isSRV |= keyword == "TextureCubeArray";
+  isSRV |= keyword == "Texture2DMS";
+  isSRV |= keyword == "Texture2DMSArray";
+  if (isSRV)
+    return DXIL::ResourceClass::SRV;
+
+  bool isUAV = keyword == "RWBuffer";
+  isUAV |= keyword == "RWByteAddressBuffer";
+  isUAV |= keyword == "RWStructuredBuffer";
+  isUAV |= keyword == "RWTexture1D";
+  isUAV |= keyword == "RWTexture1DArray";
+  isUAV |= keyword == "RWTexture2D";
+  isUAV |= keyword == "RWTexture2DArray";
+  isUAV |= keyword == "RWTexture3D";
+  isUAV |= keyword == "RWTextureCube";
+  isUAV |= keyword == "RWTextureCubeArray";
+  isUAV |= keyword == "RWTexture2DMS";
+  isUAV |= keyword == "RWTexture2DMSArray";
+  isUAV |= keyword == "AppendStructuredBuffer";
+  isUAV |= keyword == "ConsumeStructuredBuffer";
+  isUAV |= keyword == "RasterizerOrderedBuffer";
+  isUAV |= keyword == "RasterizerOrderedByteAddressBuffer";
+  isUAV |= keyword == "RasterizerOrderedStructuredBuffer";
+  isUAV |= keyword == "RasterizerOrderedTexture1D";
+  isUAV |= keyword == "RasterizerOrderedTexture1DArray";
+  isUAV |= keyword == "RasterizerOrderedTexture2D";
+  isUAV |= keyword == "RasterizerOrderedTexture2DArray";
+  isUAV |= keyword == "RasterizerOrderedTexture3D";
+  if (isUAV)
+    return DXIL::ResourceClass::UAV;
+
+  return DXIL::ResourceClass::Invalid;
+}
+
+// This should probably be refactored to ASTContextHLSL, and follow types
+// rather than do string comparisons.
+DXIL::ResourceClass
+GetResourceClassForType(const clang::ASTContext &context,
+                        clang::QualType Ty) {
+  Ty = Ty.getCanonicalType();
+  if (const clang::ArrayType *arrayType = context.getAsArrayType(Ty)) {
+    return GetResourceClassForType(context, arrayType->getElementType());
+  } else if (const RecordType *RT = Ty->getAsStructureType()) {
+    return KeywordToClass(RT->getDecl()->getName());
+  } else if (const RecordType *RT = Ty->getAs<RecordType>()) {
+    if (const ClassTemplateSpecializationDecl *templateDecl =
+            dyn_cast<ClassTemplateSpecializationDecl>(RT->getDecl())) {
+      return KeywordToClass(templateDecl->getName());
+    }
+  }
+
+  return DXIL::ResourceClass::Invalid;
+}
 }

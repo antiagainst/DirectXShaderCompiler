@@ -10,6 +10,8 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef LLVM_ON_WIN32 // SPIRV change
+
 #include "dxc/Support/WinIncludes.h"
 #include <fcntl.h>
 #include <io.h>
@@ -343,3 +345,5 @@ HRESULT CreateMSFileSystemForDisk(_COM_Outptr_ ::llvm::sys::fs::MSFileSystem** p
   *pResult = new (std::nothrow) ::llvm::sys::fs::MSFileSystemForDisk();
   return (*pResult != nullptr) ? S_OK : E_OUTOFMEMORY;
 }
+
+#endif // SPIRV change

@@ -34,3 +34,4 @@ if (WIN32) # SPIRV change: UI powered by .NET
   add_subdirectory(dotnetc)
 endif (WIN32) # SPIRV change
 # HLSL Change Ends
+add_subdirectory(hlsl2spirv) # SPIRV change

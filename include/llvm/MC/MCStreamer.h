@@ -24,6 +24,8 @@
 #include "llvm/Support/SMLoc.h"
 #include <string>
 
+#include "llvm/Support/WinSAL.h" // SPIRV change
+
 namespace llvm {
 class MCAsmBackend;
 class MCCodeEmitter;

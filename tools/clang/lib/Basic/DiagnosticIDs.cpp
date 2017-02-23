@@ -19,6 +19,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/ErrorHandling.h"
 #include <map>
+#include "llvm/Support/WinMacros.h" // SPIRV change
 using namespace clang;
 
 //===----------------------------------------------------------------------===//
