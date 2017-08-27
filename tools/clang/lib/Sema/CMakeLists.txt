@@ -40,6 +40,7 @@ add_clang_library(clangSema
   SemaOpenMP.cpp
   SemaOverload.cpp
   SemaPseudoObject.cpp
+  SemaSPIRV.cpp # SPIRV Change
   SemaStmt.cpp
   SemaStmtAsm.cpp
   SemaStmtAttr.cpp

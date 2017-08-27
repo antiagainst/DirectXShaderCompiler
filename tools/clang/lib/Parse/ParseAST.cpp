@@ -157,6 +157,14 @@ void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
   // available.
   hlsl::DiagnoseTranslationUnit(&S);
   // HLSL Change Ends
+
+  // SPIRV Change Starts
+#ifdef ENABLE_SPIRV_CODEGEN
+  if (S.getLangOpts().SPIRV)
+    S.PerformSpirvTransforms();
+#endif
+  // SPIRV Change Ends
+
   Consumer->HandleTranslationUnit(S.getASTContext());
 
   std::swap(OldCollectStats, S.CollectStats);

@@ -4060,6 +4060,13 @@ public:
                         DeclGroupPtrTy &dcl, bool iscbuf);
   // HLSL Change Ends
 
+  // SPIRV Change Starts
+  //===-------------------------- SPIR-V Features -------------------------===//
+#ifdef ENABLE_SPIRV_CODEGEN
+  void PerformSpirvTransforms();
+#endif
+  // SPIRV Change Ends
+
   //===---------------------------- C++ Features --------------------------===//
 
   // Act on C++ namespaces
