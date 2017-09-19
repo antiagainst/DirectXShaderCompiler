@@ -118,15 +118,16 @@ public:
   FlattenOpaqueStruct(Sema &semaRef)
       : BaseTransform(semaRef), context(semaRef.Context), curFnDecl(nullptr) {}
 
-  uint32_t flattenType(QualType type, FlattenedVarMap *varMap, bool genParamVar,
+  uint32_t flattenType(QualType type, DeclContext *declContext,
+                       FlattenedVarMap *varMap, bool genParamVar,
                        Attr *attr = nullptr) {
     if (type->getAs<BuiltinType>() || hlsl::IsHLSLVecMatType(type) ||
         isOpaqueType(type)) {
       VarDecl *param = nullptr;
       if (genParamVar) {
         param = ParmVarDecl::Create(
-            context, context.getTranslationUnitDecl(), SourceLocation(),
-            SourceLocation(), /*Id=*/nullptr,
+            context, declContext, SourceLocation(), SourceLocation(),
+            /*Id=*/nullptr,
             // Use reference type for out variable
             attr ? context.getLValueReferenceType(type) : type,
             /*TInfo=*/nullptr, SC_None, /*DefArg=*/nullptr);
@@ -134,10 +135,9 @@ public:
         if (attr)
           param->addAttr(attr);
       } else {
-        param =
-            VarDecl::Create(context, context.getTranslationUnitDecl(),
-                            SourceLocation(), SourceLocation(),
-                            /*Id=*/nullptr, type, /*TInfo=*/nullptr, SC_Auto);
+        param = VarDecl::Create(
+            context, declContext, SourceLocation(), SourceLocation(),
+            /*Id=*/nullptr, type, /*TInfo=*/nullptr, SC_Auto);
       }
 
       return varMap->appendVariable(param);
@@ -153,17 +153,20 @@ public:
       auto curPos = structPos;
       for (const auto *field : recordType->getDecl()->decls()) {
         if (const auto *fieldDecl = dyn_cast<FieldDecl>(field))
-          varMap->setOffset(curPos++, flattenType(fieldDecl->getType(), varMap,
-                                                  genParamVar, attr));
+          varMap->setOffset(curPos++,
+                            flattenType(fieldDecl->getType(), declContext,
+                                        varMap, genParamVar, attr));
       }
       return structPos;
     }
 
     if (const auto *typedefType = type->getAs<TypedefType>())
-      return flattenType(typedefType->desugar(), varMap, genParamVar, attr);
+      return flattenType(typedefType->desugar(), declContext, varMap,
+                         genParamVar, attr);
 
     if (const auto *refType = type->getAs<ReferenceType>())
-      return flattenType(refType->getPointeeType(), varMap, genParamVar, attr);
+      return flattenType(refType->getPointeeType(), declContext, varMap,
+                         genParamVar, attr);
 
     assert("unhandled type in flattenType()");
     return 0;
@@ -173,6 +176,7 @@ public:
     llvm::SmallVector<ParmVarDecl *, 16> newParmVars;
     bool flattened = false;
 
+    auto *tu = fnDecl->getDeclContext();
     for (auto *param : fnDecl->params()) {
       const auto paramType = param->getType();
       if (containsOpaqueType(paramType)) {
@@ -180,7 +184,7 @@ public:
         // TODO: need to carry over other attributes
         Attr *attr = param->getAttr<HLSLOutAttr>();
         attr = param->getAttr<HLSLInOutAttr>();
-        (void)flattenType(paramType, &varMap, true, attr);
+        (void)flattenType(paramType, tu, &varMap, true, attr);
 
         for (auto *var : varMap.getVariables())
           newParmVars.push_back(cast<ParmVarDecl>(var));
@@ -194,7 +198,7 @@ public:
     QualType newRetType = fnDecl->getReturnType();
     if (containsOpaqueType(newRetType)) {
       auto &varMap = flattenedFnRetMap[fnDecl];
-      (void)flattenType(newRetType, &varMap, true,
+      (void)flattenType(newRetType, tu, &varMap, true,
                         HLSLOutAttr::CreateImplicit(context));
 
       for (auto *var : varMap.getVariables())
@@ -227,8 +231,11 @@ public:
     curFnDecl = newFn;
 
     // Change parameter list
-    for (auto *param : newParmVars)
+    for (auto *param : newParmVars) {
+      //param->getDeclContext()->dumpDeclContext();
       param->setDeclContext(newFn);
+      //newFn->addHiddenDecl(param);
+    }
     newFn->setParams(newParmVars);
 
     // TODO: error handling
@@ -250,8 +257,6 @@ public:
           }
         }
 
-      for (auto *decl : newVarDecls)
-        decl->setDeclContext(curFnDecl);
       if (flattened)
         return RebuildDeclStmt(newVarDecls, declStmt->getLocStart(),
                                declStmt->getLocEnd());
@@ -291,9 +296,10 @@ public:
         offset = varMap.index(offset + index);
       VarDecl *newVar = varMap.get(offset);
 
-      DeclarationNameInfo declNameInfo;
-      return RebuildDeclRefExpr(NestedNameSpecifierLoc(), newVar, declNameInfo,
-                                /*TemplateArgs=*/nullptr);
+      return DeclRefExpr::Create(
+          context, NestedNameSpecifierLoc(), SourceLocation(), newVar,
+          /*RefersToEnclosingVariableOrCapture=*/false, SourceLocation(),
+          newVar->getType(), VK_LValue);
     }
 
     return BaseTransform::TransformExpr(expr);
@@ -340,7 +346,8 @@ public:
   bool TransformVarDecl(VarDecl *varDecl, std::vector<Decl *> *flattendDecls) {
     if (containsOpaqueType(varDecl->getType())) {
       auto &varMap = flattenedVarMap[varDecl];
-      (void)flattenType(varDecl->getType(), &varMap, false);
+      (void)flattenType(varDecl->getType(), varDecl->getDeclContext(), &varMap,
+                        false);
 
       for (auto *decl : varMap.getVariables())
         flattendDecls->push_back(decl);
@@ -366,7 +373,7 @@ void Sema::PerformSpirvTransforms() {
 
   for (auto it : declMap)
     if (it.first != it.second) {
-      // transUnit->removeDecl(it.first);
+      transUnit->removeDecl(it.first);
       transUnit->addDecl(it.second);
     }
 }
