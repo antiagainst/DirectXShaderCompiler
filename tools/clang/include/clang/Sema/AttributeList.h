@@ -856,6 +856,7 @@ enum AttributeDeclKind {
   ExpectedObjectiveCInterfaceOrProtocol,
   ExpectedKernelFunction
   // SPIRV Change Begins
+  ,ExpectedScalarGlobalVar
   ,ExpectedStructGlobalVar
   ,ExpectedGlobalVarOrCTBuffer
   ,ExpectedCounterStructuredBuffer
