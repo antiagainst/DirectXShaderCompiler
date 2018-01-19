@@ -2118,6 +2118,16 @@ QualType Sema::BuildArrayType(QualType T, ArrayType::ArraySizeModifier ASM,
 
   // HLSL Change Starts
   if (getLangOpts().HLSL && T->isVariableArrayType()) {
+    // SPIRV Change Starts
+#ifdef ENABLE_SPIRV_CODEGEN
+    if (getLangOpts().SPIRV) {
+      // Allow array types whose sizes are specialization constants
+      const auto *SE = Context.getAsVariableArrayType(T)->getSizeExpr();
+      if (SE->isSpecConstantExpr(Context))
+        return T;
+    }
+#endif // ENABLE_SPIRV_CODEGEN
+    // SPIRV Change Ends
     Diag(Loc, diag::err_hlsl_vla);
     return QualType();
   }

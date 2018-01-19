@@ -1,24 +1,19 @@
 // Run: %dxc -T vs_6_0 -E main
 
-// CHECK: OpDecorate [[sc:%\d+]] SpecId 10
-[[vk::constant_id(10)]]
-// CHECK: [[sc]] = OpSpecConstant %int 12
-const int specConst = 12;
+// CHECK: [[scb:%\d+]] = OpSpecConstantTrue %bool
+// CHECK: [[sci:%\d+]] = OpSpecConstant %int 12
+// CHECK: [[scf:%\d+]] = OpSpecConstant %float 4.2
+[[vk::constant_id(0)]]  const bool  specConstBool  = true;
+[[vk::constant_id(10)]] const int   specConstInt   = 12;
+[[vk::constant_id(20)]] const float specConstFloat = 4.2;
 
-// TODO: The frontend parsing hits assertion failures saying cannot evaluating
-// as constant int for the following usages.
-/*
-cbuffer Data {
-    float4 pos[specConst];
-    float4 tex[specConst + 5];
-};
-*/
+float4 data1[specConstInt];
+static float4 data2[specConstInt + 5];
 
-// CHECK: [[add:%\d+]] = OpSpecConstantOp %int IAdd [[sc]] %int_3
-static const int val = specConst + 3;
+// TODO: support type casting
+//float3 data3[specConstBool];
+//static float3 data4[uint(specConstFloat) + 6];
 
-// CHECK-LABEL:  %main = OpFunction
-// CHECK:                OpStore %val [[add]]
 void main() {
-
+    float2 local[specConstInt + 2 + specConstBool * 3];
 }

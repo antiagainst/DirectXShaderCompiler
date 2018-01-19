@@ -459,8 +459,9 @@ SPIRVEmitter::SPIRVEmitter(CompilerInstance &ci,
       shaderModel(*hlsl::ShaderModel::GetByName(
           ci.getCodeGenOpts().HLSLProfile.c_str())),
       theContext(), theBuilder(&theContext),
-      declIdMapper(shaderModel, astContext, theBuilder, spirvOptions),
       typeTranslator(astContext, theBuilder, diags, options),
+      declIdMapper(shaderModel, astContext, theBuilder, typeTranslator,
+                   spirvOptions),
       entryFunctionId(0), curFunction(nullptr), curThis(0),
       seenPushConstantAt(), isSpecConstantMode(false),
       needsLegalization(false) {
@@ -475,6 +476,11 @@ void SPIRVEmitter::HandleTranslationUnit(ASTContext &context) {
   // Stop translating if there are errors in previous compilation stages.
   if (context.getDiagnostics().hasErrorOccurred())
     return;
+
+  // Hook up the connection between TypeTranslator and this emitter
+  // We need the emitter to translate array sizes containing
+  // specialization constants.
+  typeTranslator.setEmitter(this);
 
   TranslationUnitDecl *tu = context.getTranslationUnitDecl();
 

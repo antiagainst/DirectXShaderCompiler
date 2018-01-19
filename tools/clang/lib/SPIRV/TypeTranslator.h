@@ -22,6 +22,8 @@
 namespace clang {
 namespace spirv {
 
+class SPIRVEmitter;
+
 /// The class responsible to translate Clang frontend types into SPIR-V type
 /// instructions.
 ///
@@ -33,13 +35,15 @@ class TypeTranslator {
 public:
   TypeTranslator(ASTContext &context, ModuleBuilder &builder,
                  DiagnosticsEngine &diag, const EmitSPIRVOptions &opts)
-      : astContext(context), theBuilder(builder), diags(diag),
+      : emitter(nullptr), astContext(context), theBuilder(builder), diags(diag),
         spirvOptions(opts) {}
 
   ~TypeTranslator() {
     // Perform any sanity checks.
     assert(intendedLiteralTypes.empty());
   }
+
+  void setEmitter(SPIRVEmitter *e) { emitter = e; }
 
   /// \brief Generates the corresponding SPIR-V type for the given Clang
   /// frontend type and returns the type's <result-id>. On failure, reports
@@ -282,6 +286,7 @@ private:
   void popIntendedLiteralType();
 
 private:
+  SPIRVEmitter *emitter;
   ASTContext &astContext;
   ModuleBuilder &theBuilder;
   DiagnosticsEngine &diags;

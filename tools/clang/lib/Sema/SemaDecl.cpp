@@ -6484,6 +6484,14 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
       // int a[10][n];
       SourceRange SizeRange = VAT->getSizeExpr()->getSourceRange();
 
+      // SPIRV Change Starts
+#ifdef ENABLE_SPIRV_CODEGEN
+      if (getLangOpts().SPIRV &&
+          VAT->getSizeExpr()->isSpecConstantExpr(Context))
+        return;
+#endif // ENABLE_SPIRV_CODEGEN
+      // SPIRV Change Ends
+
       if (NewVD->isFileVarDecl())
         Diag(NewVD->getLocation(), diag::err_vla_decl_in_file_scope)
         << SizeRange;

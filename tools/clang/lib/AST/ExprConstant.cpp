@@ -8588,6 +8588,15 @@ static bool Evaluate(APValue &Result, EvalInfo &Info, const Expr *E) {
       if (VD->hasExternalFormalLinkage() &&
           !isa<EnumConstantDecl>(VD))
         return false;
+      // SPIRV Change Starts
+#ifdef ENABLE_SPIRV_CODEGEN
+      // Treat all specialization constants as variables instead of constants
+      // since we cannot replace them with their default values (intializers) or
+      // fold them.
+      if (Info.getLangOpts().SPIRV && VD->hasAttr<VKConstantIdAttr>())
+        return false;
+#endif // ENABLE_SPIRV_CODEGEN
+      // SPIRV Change Ends
     }
   }
   // HLSL Change Ends.
@@ -9036,6 +9045,15 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
     if (isa<EnumConstantDecl>(cast<DeclRefExpr>(E)->getDecl()))
       return NoDiag();
     const ValueDecl *D = dyn_cast<ValueDecl>(cast<DeclRefExpr>(E)->getDecl());
+    // SPIRV Change Starts
+#ifdef ENABLE_SPIRV_CODEGEN
+    // Treat all specialization constants as variables instead of constants
+    // since we cannot replace them with their default values (intializers) or
+    // fold them.
+    if (Ctx.getLangOpts().SPIRV && D->hasAttr<VKConstantIdAttr>())
+      return ICEDiag(IK_NotICE, cast<DeclRefExpr>(E)->getLocation());
+#endif // ENABLE_SPIRV_CODEGEN
+    // SPIRV Change Ends
     if (Ctx.getLangOpts().CPlusPlus &&
         D && IsConstNonVolatile(D->getType())) {
       // Parameter variables are never constants.  Without this check,

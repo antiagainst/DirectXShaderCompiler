@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <tuple>
 
+#include "SPIRVEmitter.h"
 #include "dxc/HLSL/DxilConstants.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
@@ -413,7 +414,29 @@ uint32_t TypeTranslator::translateType(QualType type, LayoutRule rule,
                                    decorations);
   }
 
-  emitError("type %0 unimplemented") << type->getTypeClassName();
+  if (const auto *arrayType = astContext.getAsVariableArrayType(type)) {
+    // If we are generating the type for storage classes that require explicit
+    // layout, reject specialization constants as array sizes.
+    if (rule != LayoutRule::Void) {
+      emitError("cannot use specialization constant as array size in array "
+                "type %0, which requires explicit layout")
+          << type;
+      type->dump();
+      return 0;
+    }
+
+    const uint32_t elemType =
+        translateType(arrayType->getElementType(), rule, isRowMajor);
+
+    const Expr *sizeExpr = arrayType->getSizeExpr();
+    assert(sizeExpr->isSpecConstantExpr(astContext));
+    assert(emitter);
+    const uint32_t size = emitter->doExpr(sizeExpr);
+
+    return theBuilder.getArrayType(elemType, size);
+  }
+
+  emitError("type %0 unimplemented") << type;
   type->dump();
   return 0;
 }

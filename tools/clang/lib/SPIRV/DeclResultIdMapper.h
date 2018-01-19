@@ -252,7 +252,7 @@ private:
 class DeclResultIdMapper {
 public:
   inline DeclResultIdMapper(const hlsl::ShaderModel &stage, ASTContext &context,
-                            ModuleBuilder &builder,
+                            ModuleBuilder &builder, TypeTranslator &translator,
                             const EmitSPIRVOptions &spirvOptions);
 
   /// \brief Creates the stage output variables by parsing the semantics
@@ -610,7 +610,7 @@ private:
   ASTContext &astContext;
   DiagnosticsEngine &diags;
 
-  TypeTranslator typeTranslator;
+  TypeTranslator &typeTranslator;
 
   uint32_t entryFunctionId;
 
@@ -705,11 +705,11 @@ void CounterIdAliasPair::assign(const CounterIdAliasPair &srcPair,
 DeclResultIdMapper::DeclResultIdMapper(const hlsl::ShaderModel &model,
                                        ASTContext &context,
                                        ModuleBuilder &builder,
+                                       TypeTranslator &translator,
                                        const EmitSPIRVOptions &options)
     : shaderModel(model), theBuilder(builder), spirvOptions(options),
       astContext(context), diags(context.getDiagnostics()),
-      typeTranslator(context, builder, diags, options), entryFunctionId(0),
-      needsLegalization(false),
+      typeTranslator(translator), entryFunctionId(0), needsLegalization(false),
       glPerVertex(model, context, builder, typeTranslator, options.invertY) {}
 
 bool DeclResultIdMapper::decorateStageIOLocations() {

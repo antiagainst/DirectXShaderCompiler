@@ -827,8 +827,8 @@ private:
 
   SPIRVContext theContext;
   ModuleBuilder theBuilder;
-  DeclResultIdMapper declIdMapper;
   TypeTranslator typeTranslator;
+  DeclResultIdMapper declIdMapper;
 
   /// A queue of decls reachable from the entry function. Decls inserted into
   /// this queue will persist to avoid duplicated translations. And we'd like

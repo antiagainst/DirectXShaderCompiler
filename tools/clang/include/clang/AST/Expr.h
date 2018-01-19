@@ -531,6 +531,13 @@ public:
   bool isConstantInitializer(ASTContext &Ctx, bool ForRef,
                              const Expr **Culprit = nullptr) const;
 
+  // SPIRV Change Starts
+#ifdef ENABLE_SPIRV_CODEGEN
+  /// Returns true if this expression evaluates to a specialization constant.
+  bool isSpecConstantExpr(const ASTContext &Ctx) const;
+#endif // ENABLE_SPIRV_CODEGEN
+  // SPIRV Change Ends
+
   /// EvalStatus is a struct with detailed info about an evaluation in progress.
   struct EvalStatus {
     /// HasSideEffects - Whether the evaluated expression has side effects.

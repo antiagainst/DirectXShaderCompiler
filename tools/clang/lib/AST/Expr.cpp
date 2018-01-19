@@ -2919,6 +2919,59 @@ bool Expr::isConstantInitializer(ASTContext &Ctx, bool IsForRef,
   return false;
 }
 
+// SPIRV Change Starts
+#ifdef ENABLE_SPIRV_CODEGEN
+/// Returns true if this expression evaluates to a specialization constant.
+bool Expr::isSpecConstantExpr(const ASTContext &Ctx) const {
+  switch (getStmtClass()) {
+  case Stmt::DeclRefExprClass:
+    return cast<DeclRefExpr>(this)->getDecl()->hasAttr<VKConstantIdAttr>();
+  case Stmt::CStyleCastExprClass:
+  case Stmt::CXXFunctionalCastExprClass:
+  case Stmt::ImplicitCastExprClass: {
+    const auto *CE = cast<CastExpr>(this);
+    switch (CE->getCastKind()) {
+    case CK_NoOp:
+    case CK_LValueToRValue:
+    case CK_IntegralCast:
+    case CK_FloatingCast:
+    case CK_FloatingToIntegral:
+    case CK_FloatingToBoolean:
+    case CK_IntegralToBoolean:
+    case CK_IntegralToFloating:
+      return CE->getSubExpr()->isSpecConstantExpr(Ctx);
+    }
+  } break;
+  case Stmt::BinaryOperatorClass: {
+    const auto *BO = cast<BinaryOperator>(this);
+    if (BO->getOpcode() >= BO_Mul && BO->getOpcode() < BO_Assign) {
+      const bool LHS = BO->getLHS()->isSpecConstantExpr(Ctx);
+      const bool RHS = BO->getRHS()->isSpecConstantExpr(Ctx);
+      return LHS && (RHS || BO->getRHS()->isIntegerConstantExpr(Ctx)) ||
+             RHS && (LHS || BO->getLHS()->isIntegerConstantExpr(Ctx));
+    }
+  } break;
+  case Stmt::UnaryOperatorClass: {
+    const auto *UO = cast<UnaryOperator>(this);
+    switch (UO->getOpcode()) {
+    case UO_Plus:
+    case UO_Minus:
+    case UO_Not:
+    case UO_LNot:
+      return UO->isSpecConstantExpr(Ctx);
+    }
+  } break;
+  case Stmt::InitListExprClass: {
+    // Allow <scalar-type>() casts
+    const auto *IL = cast<InitListExpr>(this);
+    return IL->getNumInits() == 1 && IL->getInit(0)->isSpecConstantExpr(Ctx);
+  } break;
+  }
+  return false;
+}
+#endif // ENABLE_SPIRV_CODEGEN
+// SPIRV Change Ends
+
 namespace {
   /// \brief Look for any side effects within a Stmt.
   class SideEffectFinder : public ConstEvaluatedExprVisitor<SideEffectFinder> {
