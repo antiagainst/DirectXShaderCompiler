@@ -863,6 +863,14 @@ def HLSLExperimental : InheritableAttr {
 
 // SPIRV Change Starts
 
+def SPVExtension : Attr {
+  let Spellings = [CXX11<"spv", "extension">];
+  let Args = [StringArgument<"Extension">];
+  let HasCustomParsing = 1;
+  let LangOpts = [SPIRV];
+  let Documentation = [Undocumented];
+}
+
 def VKBuiltIn : InheritableAttr {
   let Spellings = [CXX11<"vk", "builtin">];
   let Subjects = SubjectList<[Function, ParmVar, Field], ErrorDiag>;

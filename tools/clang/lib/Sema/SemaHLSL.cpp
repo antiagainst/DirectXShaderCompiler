@@ -10479,6 +10479,23 @@ void hlsl::HandleDeclAttributeForHLSL(Sema &S, Decl *D, const AttributeList &A, 
     declAttr = ::new (S.Context) VKConstantIdAttr(A.getRange(), S.Context,
       ValidateAttributeIntArg(S, A), A.getAttributeSpellingListIndex());
     break;
+  case AttributeList::AT_SPVExtension:
+    // We opt in custom parsing for this attribute. So we need to check the
+    // number of arguments by ourselves.
+    if (A.getNumArgs() != 1) {
+      S.Diag(A.getLoc(), diag::err_attribute_wrong_number_arguments)
+          << A.getName() << 1;
+      return;
+    }
+    declAttr = ::new (S.Context) SPVExtensionAttr(
+        A.getRange(), S.Context, ValidateAttributeStringArg(S, A, nullptr),
+        A.getAttributeSpellingListIndex());
+    // This attribute should be applied to the translation unit.
+    if (declAttr) {
+      D->getTranslationUnitDecl()->addAttr(declAttr);
+      return;
+    }
+    break;
   default:
     Handled = false;
     return;

@@ -1929,10 +1929,10 @@ static void GenerateHasAttrSpellingStringSwitch(
 
       // SPIRV Change Begins
       // Allow C++11 attribute specifiers in HLSL when they are of the
-      // vk namespace
+      // vk or spv namespace
       std::vector<FlattenedSpelling> Spellings = GetFlattenedSpellings(*Attr);
       for (const auto &S : Spellings)
-        if (S.nameSpace() == "vk") {
+        if (S.nameSpace() == "vk" || S.nameSpace() == "spv") {
           Test = "(LangOpts.HLSL || LangOpts.CPlusPlus11)";
           break;
         }
