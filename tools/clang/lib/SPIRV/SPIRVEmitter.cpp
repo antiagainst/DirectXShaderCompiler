@@ -16,6 +16,7 @@
 #include "dxc/HlslIntrinsicOp.h"
 #include "spirv-tools/optimizer.hpp"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/Support/Allocator.h"
 
 #include "InitListHandler.h"
 
@@ -195,9 +196,25 @@ bool isReferencingNonAliasStructuredOrByteBuffer(const Expr *expr) {
   return false;
 }
 
+void *bumpPtrAllocate(spvtools::Allocator *wrapper, size_t size, size_t align) {
+  return static_cast<llvm::BumpPtrAllocator *>(wrapper->internals)
+      ->Allocate(size, align);
+}
+
+void bumpPtrDeallocate(spvtools::Allocator *wrapper, void *ptr, size_t size) {
+  static_cast<llvm::BumpPtrAllocator *>(wrapper->internals)
+      ->Deallocate(ptr, size);
+}
+
 bool spirvToolsLegalize(spv_target_env env, std::vector<uint32_t> *module,
                         std::string *messages) {
+  llvm::BumpPtrAllocator bumpPtrAllocator;
+  spvtools::Allocator spvToolsAllocator{bumpPtrAllocate, bumpPtrDeallocate,
+                                        &bumpPtrAllocator};
+
   spvtools::Optimizer optimizer(env);
+
+  optimizer.SetAllocator(&spvToolsAllocator);
 
   optimizer.SetMessageConsumer(
       [messages](spv_message_level_t /*level*/, const char * /*source*/,
@@ -219,7 +236,13 @@ bool spirvToolsLegalize(spv_target_env env, std::vector<uint32_t> *module,
 bool spirvToolsOptimize(spv_target_env env, std::vector<uint32_t> *module,
                         const llvm::SmallVector<llvm::StringRef, 4> &flags,
                         std::string *messages) {
+  llvm::BumpPtrAllocator bumpPtrAllocator;
+  spvtools::Allocator spvToolsAllocator{bumpPtrAllocate, bumpPtrDeallocate,
+                                        &bumpPtrAllocator};
+
   spvtools::Optimizer optimizer(env);
+
+  optimizer.SetAllocator(&spvToolsAllocator);
 
   optimizer.SetMessageConsumer(
       [messages](spv_message_level_t /*level*/, const char * /*source*/,
